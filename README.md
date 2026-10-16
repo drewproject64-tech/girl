@@ -1,38 +1,38 @@
 # Guncel Girls — @Guncel_Girls_Bot
 
-Free, interactive Turkish/English outfit planner. Choose one of four occasions and four styles, receive clothing/shoe/bag recommendations, switch suggestions, match colours, and save up to 20 favourites. No external redirects, forced joins, payments, AI API keys, or photo uploads.
+Simple free Turkish/English outfit and colour suggestion bot. No database, saved users, favourites, admin panel, broadcasts, external redirects or forced channel joins. Python 3.12 standard library only; no paid APIs.
 
 ## Run
 
-Use Python 3.12 or newer. Set `BOT_TOKEN` in your host's secret environment, then run:
+Set `BOT_TOKEN` in your hosting environment and run `python bot.py`.
+Use one worker only. The token is checked against @Guncel_Girls_Bot at startup. Never commit a token. `.env.example` is a reference; the app does not load .env files.
 
-```sh
-python bot.py
-```
+Build command: `pip install -r requirements.txt`
+Start command: `python bot.py`
 
-`.env.example` documents the variables; the app reads actual environment variables (it does not load .env files). Use only one running instance per bot token. `BOT_TOKEN` must belong to @Guncel_Girls_Bot; startup checks the username.
+On startup the worker sets the bot name, bio, description visible before Start, and command menu in Turkish and English. These updates only happen once the worker runs with the correct token. Add a suitable brand/fashion profile image using @BotFather before submitting ads.
 
-On startup the code sets the name, bio (`setMyShortDescription`), pre-Start description (`setMyDescription`) and command menu, including default, Turkish and English variants. These changes become visible only after the worker is running with the correct token. Add a suitable fashion/brand profile image through @BotFather before advertising.
+## Functions
 
-For a background worker: build `pip install -r requirements.txt`, start `python bot.py`. No public web port is needed. Set `DB_PATH` to a persistent writable path if saved favourites must survive host replacement; the default `data/girls.db` survives process restarts only when that filesystem is retained. An ephemeral hosting filesystem can lose favourites on redeploy. No database service is required for the core planner.
+- Occasion → style → outfit recommendation, with another variation button.
+- Quick outfit suggestion.
+- Colour matching.
+- Turkish/English menu switch; language travels in button callbacks, with no saved user preferences.
+- `/start`, `/help`, `/privacy`.
 
-## Privacy and behaviour
+The app processes Telegram messages to reply but does not save user IDs or message history. Telegram may retain messages under its own policies. Operational logs exclude message text and token URLs.
 
-Only private chats are handled. The app stores a Telegram user ID alongside a chosen language and saved looks; it does not build a registration list or send unsolicited broadcasts. `/privacy` explains storage and `/delete_data` removes saved data. Telegram itself handles message delivery and may retain messages under its own policies. Host logs contain operational messages, not token URLs or message contents.
+## Ads
 
-Suggestions are general editorial ideas, not personalised professional advice or live weather recommendations. Two base variations per occasion plus four style adaptations provide 32 combinations per language. Saved looks retain the language in which they were saved.
+The bot provides the same service to all users and moderators. Keep the ad text, target channel language and actual service consistent. No approval guarantee: Telegram reviews the ad, profile, imagery and destination.
 
-## Telegram Ads readiness
+https://ads.telegram.org/guidelines
+https://ads.telegram.org/tos
 
-The visible service, bio, description and ad text must describe this actual outfit planner. Keep ads, destination and targeted channels in matching languages. Do not repurpose it into a redirect-only, dating or adult-content bot, or replace content to evade review. There is no reviewer-specific behaviour. Telegram decides approval; this code cannot guarantee acceptance.
+## Validation
 
-Official rules: https://ads.telegram.org/guidelines and https://ads.telegram.org/tos
+`python -m unittest discover -s tests -v`
 
-## Checks
+`python -m py_compile bot.py`
 
-```sh
-python -m unittest discover -s tests -v
-python -m py_compile bot.py
-```
-
-Live delivery/profile updates need a real bot token and are not covered by offline tests.
+Offline checks do not confirm live Telegram delivery. A bot token and running host are required for live verification.
