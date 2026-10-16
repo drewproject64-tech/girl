@@ -4,25 +4,23 @@ import logging
 import os
 import random
 import signal
-import sqlite3
 import threading
 import urllib.error
 import urllib.request
-from pathlib import Path
 
 NAME = 'Guncel Girls'
 USERNAME = 'Guncel_Girls_Bot'
 BIO = {
-    'tr': 'Güncel Girls: günlük kombin fikirleri, renk uyumu ve kaydedilebilir stil önerileri.',
-    'en': 'Guncel Girls: everyday outfit ideas, colour matching and saved style inspiration.',
+    'tr': 'Güncel Girls: günlük kombin fikirleri ve renk uyumu önerileri.',
+    'en': 'Guncel Girls: everyday outfit ideas and colour matching inspiration.',
 }
 DESCRIPTION = {
-    'tr': 'Guncel Girls ile günlük kombin fikirleri keşfedin. İş, üniversite, günlük yaşam veya özel bir gün seçin; ardından tarzınıza uygun kıyafet, renk ve aksesuar önerileri alın. Favorilerinizi kaydedin veya renk uyumlarını inceleyin. Ücretsizdir; kanal üyeliği gerekmez. Başlamak için Başlat düğmesine dokunun. Türkçe ve İngilizce desteklenir.',
-    'en': 'Discover everyday outfit ideas with Guncel Girls. Choose work, university, casual or a special occasion, then get clothing, colour and accessory suggestions for your style. Save favourite looks or explore colour combinations. Free to use; no channel membership required. Tap Start to begin. Available in Turkish and English.',
+    'tr': 'Guncel Girls ile günlük kombin fikirleri keşfedin. İş, üniversite, günlük yaşam veya özel bir gün seçin; ardından tarzınıza uygun kıyafet, renk ve aksesuar önerileri alın. Renk uyumlarını inceleyin. Ücretsizdir; kanal üyeliği gerekmez. Başlamak için Başlat düğmesine dokunun. Türkçe ve İngilizce desteklenir.',
+    'en': 'Discover everyday outfit ideas with Guncel Girls. Choose work, university, casual or a special occasion, then get clothing, colour and accessory suggestions for your style. Explore colour combinations. Free to use; no channel membership required. Tap Start to begin. Available in Turkish and English.',
 }
 TEXT = {
- 'tr': ['Hoş geldiniz! Bir etkinlik ve tarz seçerek kombin oluşturun. Öneriler genel stil fikirleridir; hava durumuna ve rahatınıza göre uyarlayın.', 'Kombin oluştur', 'Renk uyumu', 'Favorilerim', 'Yardım', 'English', 'Bir etkinlik seçin:', 'Bir tarz seçin:', 'Ana menü', 'Kaydet', 'Başka öneri', 'Kaydedildi.', 'Henüz favoriniz yok. Önce bir kombin oluşturun.', 'Favorileri sil', 'Favoriler silindi.', 'Bir renk seçin:', 'Verilerimi sil', 'Kaydettiğiniz kombinler ve dil tercihiniz bu botun veritabanında tutulur. Fotoğraf, telefon veya konum istemeyiz. /delete_data ile kayıtlarınızı silebilirsiniz. /start: menü, /help: yardım, /privacy: gizlilik. Botu engelleyerek iletişimi durdurabilirsiniz.', 'Verileriniz silindi.', 'Bu seçim artık geçerli değil. /start ile yeniden başlayın.', 'Günün kombini'],
- 'en': ['Welcome! Choose an occasion and style to build an outfit. These are general style ideas; adapt them to the weather and your comfort.', 'Build an outfit', 'Colour matcher', 'My favourites', 'Help', 'Türkçe', 'Choose an occasion:', 'Choose a style:', 'Main menu', 'Save', 'Another idea', 'Saved.', 'No favourites yet. Create an outfit first.', 'Clear favourites', 'Favourites cleared.', 'Choose a colour:', 'Delete my data', 'Saved outfits and your language preference are stored in this bot’s database. We do not request photos, phone numbers or location. Use /delete_data to delete your records. /start: menu, /help: help, /privacy: privacy. Block the bot to stop communication.', 'Your data has been deleted.', 'This selection is no longer valid. Use /start to begin again.', 'Today’s outfit'],
+ 'tr': ['Hoş geldiniz! Bir etkinlik ve tarz seçerek kombin oluşturun. Öneriler genel stil fikirleridir; hava durumuna ve rahatınıza göre uyarlayın.', 'Kombin oluştur', 'Renk uyumu', 'Favorilerim', 'Yardım', 'English', 'Bir etkinlik seçin:', 'Bir tarz seçin:', 'Ana menü', 'Kaydet', 'Başka öneri', 'Kaydedildi.', 'Henüz favoriniz yok. Önce bir kombin oluşturun.', 'Favorileri sil', 'Favoriler silindi.', 'Bir renk seçin:', 'Verilerimi sil', 'Etkinlik ve tarz seçin veya renk uyumlarını keşfedin. Kullanıcı kaydı, veritabanı ve yönetici paneli yoktur. Mesajlar işlem sırasında kullanılır; uygulama mesaj geçmişini kaydetmez. Telegram kendi politikaları kapsamında mesajları saklayabilir. /start: menü, /help: yardım, /privacy: gizlilik.', 'Verileriniz silindi.', 'Bu seçim artık geçerli değil. /start ile yeniden başlayın.', 'Günün kombini'],
+ 'en': ['Welcome! Choose an occasion and style to build an outfit. These are general style ideas; adapt them to the weather and your comfort.', 'Build an outfit', 'Colour matcher', 'My favourites', 'Help', 'Türkçe', 'Choose an occasion:', 'Choose a style:', 'Main menu', 'Save', 'Another idea', 'Saved.', 'No favourites yet. Create an outfit first.', 'Clear favourites', 'Favourites cleared.', 'Choose a colour:', 'Delete my data', 'Choose an occasion and style or explore colour combinations. No user registration, database or admin panel. Messages are processed to reply; this app does not save chat history. Telegram may retain messages under its own policies. /start: menu, /help: help, /privacy: privacy.', 'Your data has been deleted.', 'This selection is no longer valid. Use /start to begin again.', 'Today’s outfit'],
 }
 OCCASIONS = {'tr': ['İş', 'Üniversite', 'Günlük', 'Özel gün'], 'en': ['Work', 'University', 'Casual', 'Special occasion']}
 STYLES = {'tr': ['Minimal', 'Tesettür', 'Sportif', 'Zarif'], 'en': ['Minimal', 'Modest', 'Sporty', 'Elegant']}
@@ -56,31 +54,9 @@ def outfit(lang, occasion, style, variant):
     return f'{OCCASIONS[lang][occasion]} · {STYLES[lang][style]}\n\n{clothes}\n{shoes}\n{bag}\n\n{ADAPT[lang][style]}'
 
 
-class Store:
-    def __init__(self, path):
-        Path(path).parent.mkdir(parents=True, exist_ok=True)
-        self.db = sqlite3.connect(path)
-        self.db.executescript('CREATE TABLE IF NOT EXISTS preferences (uid INTEGER PRIMARY KEY, lang TEXT); CREATE TABLE IF NOT EXISTS favourites (uid INTEGER, look TEXT, PRIMARY KEY(uid, look));')
-    def language(self, uid, detected='tr'):
-        row = self.db.execute('SELECT lang FROM preferences WHERE uid=?', (uid,)).fetchone()
-        return row[0] if row else ('en' if detected.startswith('en') else 'tr')
-    def set_language(self, uid, lang):
-        self.db.execute('INSERT OR REPLACE INTO preferences VALUES (?,?)', (uid, lang)); self.db.commit()
-    def save(self, uid, look):
-        self.db.execute('INSERT OR IGNORE INTO favourites VALUES (?,?)', (uid, look))
-        self.db.execute('DELETE FROM favourites WHERE uid=? AND rowid NOT IN (SELECT rowid FROM favourites WHERE uid=? ORDER BY rowid DESC LIMIT 20)', (uid, uid)); self.db.commit()
-    def favourites(self, uid):
-        return [r[0] for r in self.db.execute('SELECT look FROM favourites WHERE uid=? ORDER BY rowid DESC', (uid,))]
-    def clear(self, uid, all_data=False):
-        self.db.execute('DELETE FROM favourites WHERE uid=?', (uid,))
-        if all_data:
-            self.db.execute('DELETE FROM preferences WHERE uid=?', (uid,))
-        self.db.commit()
-
-
 class Bot:
-    def __init__(self, token, store):
-        self.token, self.store = token, store
+    def __init__(self, token):
+        self.token = token
     def api(self, method, **params):
         payload = json.dumps(params).encode()
         request = urllib.request.Request(f'https://api.telegram.org/bot{self.token}/{method}', data=payload, headers={'Content-Type': 'application/json'})
@@ -105,15 +81,16 @@ class Bot:
             self.api('setMyShortDescription', short_description=BIO[lang], language_code=code)
             self.api('setMyDescription', description=DESCRIPTION[lang], language_code=code)
             labels = ['Menü', 'Yardım', 'Gizlilik', 'Verilerimi sil'] if lang == 'tr' else ['Menu', 'Help', 'Privacy', 'Delete my data']
-            self.api('setMyCommands', language_code=code, commands=[{'command': command, 'description': label} for command, label in zip(('start', 'help', 'privacy', 'delete_data'), labels)])
+            self.api('setMyCommands', language_code=code, commands=[{'command': command, 'description': label} for command, label in zip(('start', 'help', 'privacy'), labels)])
     @staticmethod
     def keyboard(items):
         return {'inline_keyboard': [[{'text': label, 'callback_data': data}] for label, data in items]}
     def send(self, chat, text, items=()):
+        items = [(label, f'{self.lang}|{data}') for label, data in items]
         self.api('sendMessage', chat_id=chat, text=text, reply_markup=self.keyboard(items))
     def menu(self, chat, lang):
         t = TEXT[lang]
-        self.send(chat, t[0], [(t[1], 'build'), (t[20], 'daily'), (t[2], 'colours'), (t[3], 'saved'), (t[4], 'help'), (t[5], 'lang:en' if lang == 'tr' else 'lang:tr')])
+        self.send(chat, t[0], [(t[1], 'build'), (t[20], 'daily'), (t[2], 'colours'), (t[4], 'help'), (t[5], 'lang:en' if lang == 'tr' else 'lang:tr')])
     def handle(self, update):
         callback = update.get('callback_query')
         message = callback.get('message', {}) if callback else update.get('message', {})
@@ -121,18 +98,24 @@ class Bot:
         if message.get('chat', {}).get('type') != 'private' or not user.get('id'):
             return
         uid, chat = user['id'], message['chat']['id']
-        lang = self.store.language(uid, user.get('language_code', 'tr'))
+        lang = 'en' if user.get('language_code', '').startswith('en') else 'tr'
         t = TEXT[lang]
         if callback:
             self.api('answerCallbackQuery', callback_query_id=callback['id'])
             data = callback.get('data', '')
+            if '|' in data:
+                selected, data = data.split('|', 1)
+                if selected in TEXT:
+                    lang = selected
+                    t = TEXT[lang]
         else:
-            data = {'/start': 'menu', '/help': 'help', '/privacy': 'help', '/delete_data': 'delete'}.get(message.get('text', '').split(' ')[0].split('@')[0], 'menu')
+            data = {'/start': 'menu', '/help': 'help', '/privacy': 'help', '/delete_data': 'help'}.get(message.get('text', '').split(' ')[0].split('@')[0], 'menu')
+        self.lang = lang
         back = [(t[8], 'menu')]
         if data == 'menu':
             self.menu(chat, lang)
         elif data in ('lang:en', 'lang:tr'):
-            lang = data[-2:]; self.store.set_language(uid, lang); self.menu(chat, lang)
+            lang = data[-2:]; self.lang = lang; self.menu(chat, lang)
         elif data == 'build':
             self.send(chat, t[6], [(label, f'occasion:{i}') for i, label in enumerate(OCCASIONS[lang])] + back)
         elif data.startswith('occasion:'):
@@ -141,7 +124,7 @@ class Bot:
             except (ValueError, AssertionError):
                 self.send(chat, t[19], back); return
             self.send(chat, t[7], [(label, f'look:{occasion}:{i}:0') for i, label in enumerate(STYLES[lang])] + back)
-        elif data == 'daily' or data.startswith(('look:', 'save:')):
+        elif data == 'daily' or data.startswith('look:'):
             try:
                 if data == 'daily':
                     o, s, v = random.randrange(4), random.randrange(4), random.randrange(2)
@@ -150,10 +133,7 @@ class Bot:
                 look = outfit(lang, o, s, v)
             except (ValueError, IndexError):
                 self.send(chat, t[19], back); return
-            if data.startswith('save:'):
-                self.store.save(uid, look); self.send(chat, t[11], back)
-            else:
-                self.send(chat, look, [(t[9], f'save:{o}:{s}:{v}'), (t[10], f'look:{o}:{s}:{1-v}')] + back)
+            self.send(chat, look, [(t[10], f'look:{o}:{s}:{1-v}')] + back)
         elif data == 'colours':
             self.send(chat, t[15], [(label, f'colour:{i}') for i, label in enumerate(COLOURS[lang])] + back)
         elif data.startswith('colour:'):
@@ -162,18 +142,8 @@ class Bot:
             except (ValueError, AssertionError):
                 self.send(chat, t[19], back); return
             self.send(chat, COLOURS[lang][index] + '\n\n' + MATCHES[lang][index], [(t[2], 'colours')] + back)
-        elif data == 'saved':
-            looks = self.store.favourites(uid)
-            # One saved look per message keeps replies within Telegram limits.
-            for look in looks:
-                self.send(chat, look)
-            self.send(chat, t[3] if looks else t[12], ([(t[13], 'clear')] if looks else []) + back)
-        elif data == 'clear':
-            self.store.clear(uid); self.send(chat, t[14], back)
-        elif data == 'delete':
-            self.store.clear(uid, all_data=True); self.send(chat, t[18], back)
         elif data == 'help':
-            self.send(chat, t[17], [(t[16], 'delete')] + back)
+            self.send(chat, t[17], back)
         else:
             self.send(chat, t[19], back)
 
@@ -183,7 +153,7 @@ def main():
     token = os.environ.get('BOT_TOKEN', '').strip()
     if not token:
         raise SystemExit('Set BOT_TOKEN in your hosting environment; never commit it.')
-    bot = Bot(token, Store(os.environ.get('DB_PATH', 'data/girls.db')))
+    bot = Bot(token)
     stop = threading.Event()
     for sig in (signal.SIGINT, signal.SIGTERM):
         signal.signal(sig, lambda *_: stop.set())
@@ -207,7 +177,7 @@ def main():
                 logging.warning('Polling unavailable; retrying in five seconds')
                 stop.wait(5)
     finally:
-        bot.store.db.close()
+        logging.info('Bot stopped')
 
 
 if __name__ == '__main__':
